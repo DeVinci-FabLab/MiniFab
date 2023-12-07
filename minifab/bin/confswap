@@ -1,0 +1,92 @@
+#!/bin/bash
+
+#  @author      : stanleyarn (stanleyarn@$HOSTNAME)
+#  @file        : confswap
+#  @created     : Tuesday Dec 05, 2023 12:07:22 CET
+
+CONFIGS_PATH=./CONFIGS
+PRINTER_CONFIG_PATH=/home/$USER/printer_data/config
+
+CNC_CONFIG_FILE=cnc-config.cfg
+PRINTER_CONFIG_FILE=printer-config.cfg
+ENGRAVER_CONFIG_FILE=engraver-config.cfg
+
+LOG_FILE=log.txt
+
+# to be able to use relative paths
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+cd $parent_path
+cd ..
+
+function checkDirIsEmpty {
+  if [ -z "$(ls $1)" ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+function checkExist {
+  if [ -f "$2" ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+function getLastConfigType {
+  checkExist -f ./$LOG_FILE
+  if [ $? = 1 ]; then
+    while IFS= read -r line
+    do
+      echo $line
+    done < "./$LOG_FILE"
+  else
+    touch ./$LOG_FILE
+  fi
+}
+
+function move {
+  # check if there is already a config file loaded
+  if [ -z "$(find $PRINTER_CONFIG_PATH -type f -name printer.cfg)" ]; then
+    # check if the config file for the mode we want exists
+    checkExist -f $CONFIGS_PATH/$1
+    if [ $? = 0 ]; then
+      echo "The config file for this mode does not exist."
+      exit -1
+    fi
+    # move the file
+    mv $CONFIGS_PATH/$1 $PRINTER_CONFIG_PATH/printer.cfg
+    # actualize log
+    echo "$1" > ./$LOG_FILE
+    echo "The config file has been replaced succefully."
+  else
+    # remove the file
+    checkExist -f ./$LOG_FILE
+    if [ $? = 1 ]; then
+      last_config=$(getLastConfigType)
+      if [ $last_config = $1 ]; then
+        echo "The config file for this mod is already loaded"
+      else
+        mv $PRINTER_CONFIG_PATH/printer.cfg $CONFIGS_PATH/$last_config
+        # restart
+        move $1
+      fi
+    else
+      rm $PRINTER_CONFIG_PATH/printer.cfg
+      move $1
+    fi
+  fi
+}
+
+# start
+
+if [ "$1" = "printer" ]; then
+move $PRINTER_CONFIG_FILE
+elif [ "$1" = "cnc" ]; then
+move $CNC_CONFIG_FILE
+elif [ "$1" = "engraver" ]; then
+move $ENGRAVER_CONFIG_FILE
+fi
+
+exit 0

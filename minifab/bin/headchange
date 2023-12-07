@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# relative path
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+cd $parent_path
+cd ..
+
+source pin-config.txt
+
+function getState { echo $( gpio read "$1" ); }
+
+function checkError {
+  if [ $1 = -1 ]; then
+    echo "An error has occured."
+    exit -1
+  fi
+}
+
+echo -n "Please remove the current head..."
+
+while [ $( getState $PRINTER_IN_PIN ) = 1 ] || [ $( getState $CNC_IN_PIN ) = 1 ] || [ $( getState $ENGRAVER_IN_PIN ) = 1 ] ; do
+  sleep 1
+done
+  
+echo " head removed."
+echo -n "Please install the new head..."
+
+while [ $( getState $PRINTER_IN_PIN ) = 0 ] && [ $( getState $CNC_IN_PIN ) = 0 ] && [ $( getState $ENGRAVER_IN_PIN ) = 0 ] ; do
+  sleep 1
+done
+
+
+if [ $(getState $PRINTER_IN_PIN) = 1 ]; then
+  CURRENT_HEAD_TYPE="printer"
+elif [ $( getState $CNC_IN_PIN ) = 1 ]; then
+  CURRENT_HEAD_TYPE="cnc"
+elif [ $( getState $ENGRAVER_IN_PIN ) = 1 ]; then
+  CURRENT_HEAD_TYPE="engraver"
+else
+  CURRENT_HEAD_TYPE="heu whatufuk"
+fi
+
+checkError $( ./bin/confswap $CURRENT_HEAD_TYPE ) 
+echo " $CURRENT_HEAD_TYPE head is installed."
+
+exit 0
