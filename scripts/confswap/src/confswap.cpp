@@ -15,7 +15,7 @@ using namespace std;
 /* PATH VARIABLES */
 const string printer_inc_dir = "PRINT";
 const string engraver_inc_dir = "PENPLT";
-const string cnc_inc_dir = "CNC";
+const string cnc_inc_dir = "MILL";
 
 const string printer_config_file = "/home/biqu/printer_data/config/printer.cfg";
 /* -------------- */
@@ -48,6 +48,8 @@ int editConfig(string include_dir)
   int i = 0;
   int line_cnt = 0;
 
+  int inc_line = 1;
+
   string new_config_file_str = "";
 
   while (config_file_str[i] != 0)
@@ -57,14 +59,14 @@ int editConfig(string include_dir)
     {
       line_cnt++;
 
-      if (line_cnt == 2 - 1)
+      if (line_cnt == inc_line - 1)
       {
         new_config_file_str += "\n[include " + include_dir + "/*.cfg]";
       }
 
     }
 
-    if (line_cnt != 2 - 1)
+    if (line_cnt != inc_line - 1)
     {
         new_config_file_str += c;
     }
@@ -116,7 +118,7 @@ int main(int c, char *v[])
      if (err) cerr << "Error." << endl; 
      else cout << "Pen mode succefully set." << endl;
   }
-  else if (selected_mode == "cnc")
+  else if (selected_mode == "mill")
   {
      int err = editConfig(cnc_inc_dir);
      
