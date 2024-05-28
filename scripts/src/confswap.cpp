@@ -18,9 +18,20 @@ string config_file_path = "/home/biqu/printer_data/config/printer.cfg";
 
 int main(int argc, char *argv[])
 {
-  gpiocb1::write(PRINT_LED_PIN, LOW);
-  gpiocb1::write(PENPLT_LED_PIN, LOW);
-  gpiocb1::write(MILL_LED_PIN, LOW);
+  ifstream config_file_in;
+  ofstream config_file_out;
+  ofstream log_file_out;
+
+  try
+  {
+    config_file_in.open(config_file_path);
+  }
+  catch (...)
+  {
+    cerr << "Error loading config file." << endl;
+    return -1;
+  }
+
 
   /* USER INPUT */
   string replaced_dir;
@@ -35,20 +46,28 @@ int main(int argc, char *argv[])
     else if (argc == 2)
     {
       input = argv[1];
-      if (input == "print")
+      if (input == "print" or input == "penplt" or input == "mill")
       {
-        replaced_dir = "PRINT";
-        gpiocb1::write(PRINT_LED_PIN, HIGH);
-      }
-      else if (input == "penplt")
-      {
-        replaced_dir = "PENPLT";
-        gpiocb1::write(PENPLT_LED_PIN, HIGH);
-      }
-      else if (input == "mill")
-      {
-        replaced_dir = "MILL"; 
-        gpiocb1::write(MILL_LED_PIN, HIGH);
+
+        gpiocb1::write(PRINT_LED_PIN, LOW);
+        gpiocb1::write(PENPLT_LED_PIN, LOW);
+        gpiocb1::write(MILL_LED_PIN, LOW);
+
+        if (input == "print")
+        {
+          replaced_dir = "PRINT";
+          gpiocb1::write(PRINT_LED_PIN, HIGH);
+        }
+        else if (input == "penplt")
+        {
+          replaced_dir = "PENPLT";
+          gpiocb1::write(PENPLT_LED_PIN, HIGH);
+        }
+        else if (input == "mill")
+        {
+          replaced_dir = "MILL"; 
+          gpiocb1::write(MILL_LED_PIN, HIGH);
+        }
       }
       else
       {
@@ -68,21 +87,7 @@ int main(int argc, char *argv[])
     return e;
   }
 
-
   /* EDIT FILE  */
-  ifstream config_file_in;
-  ofstream config_file_out;
-  ofstream log_file_out;
-
-  try
-  {
-    config_file_in.open(config_file_path);
-  }
-  catch (...)
-  {
-    cerr << "Error loading config file." << endl;
-  }
-
   string edited_config_file_str = "";
   int i = 0;
   for (string line; getline(config_file_in, line);)
